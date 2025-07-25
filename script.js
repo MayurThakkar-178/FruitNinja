@@ -30,6 +30,9 @@ navigator.mediaDevices.getUserMedia({ video: true })
     console.error("Camera error:", err);
   });
 
+let fruitImg = new Image();
+fruitImg.src = 'watermelon.png';
+
 #webcam {
   display: none;
 }
