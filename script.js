@@ -1,26 +1,4 @@
-body {
-  margin: 0;
-  text-align: center;
-  background-color: #a0e8ff;
-  font-family: 'Comic Sans MS', cursive, sans-serif;
-}
-
-h1 {
-  margin: 10px;
-  color: #fff;
-  background: #2d98da;
-  padding: 10px;
-  border-radius: 10px;
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#gameCanvas {
-  background: url('assets/background.png') no-repeat center center;
-  background-size: cover;
-  border: 3px solid #fff;
-}
+// Start webcam stream
 navigator.mediaDevices.getUserMedia({ video: true })
   .then(function(stream) {
     const video = document.getElementById('webcam');
@@ -30,9 +8,14 @@ navigator.mediaDevices.getUserMedia({ video: true })
     console.error("Camera error:", err);
   });
 
+// Load fruit image
 let fruitImg = new Image();
-fruitImg.src = 'watermelon.png';
+fruitImg.src = 'assets/watermelon.png';
 
-#webcam {
-  display: none;
-}
+// Draw on canvas (basic example)
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+fruitImg.onload = () => {
+  ctx.drawImage(fruitImg, 300, 200, 100, 100); // position and size
+};
