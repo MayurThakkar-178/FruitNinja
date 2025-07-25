@@ -1,0 +1,90 @@
+import * as handPoseDetection from '@tensorflow-models/hand-pose-detection';
+import '@tensorflow/tfjs-backend-webgl';
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 600;
+
+const video = document.getElementById('webcam');
+let model, hands, fingerTrail = [];
+const fruitImages = ['banana.png', 'carrot.png', 'tomato.png', 'watermelon.png'].map(src => {
+  const img = new Image();
+  img.src = 'assets/' + src;
+  return img;
+});
+let fruits = [];
+
+function spawnFruit() {
+  const x = Math.random() * canvas.width;
+  const y = canvas.height + 50;
+  const speed = -5 - Math.random() * 3;
+  const image = fruitImages[Math.floor(Math.random() * fruitImages.length)];
+  fruits.push({ x, y, speed, image });
+}
+
+function drawFruits() {
+  fruits.forEach(fruit => {
+    fruit.y += fruit.speed;
+    ctx.drawImage(fruit.image, fruit.x, fruit.y, 50, 50);
+  });
+  fruits = fruits.filter(fruit => fruit.y > -60);
+}
+
+async function initWebcam() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  video.srcObject = stream;
+  await new Promise(res => video.onloadedmetadata = res);
+}
+
+function drawTrail() {
+  ctx.strokeStyle = 'orange';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  for (let i = 0; i < fingerTrail.length - 1; i++) {
+    ctx.moveTo(fingerTrail[i].x, fingerTrail[i].y);
+    ctx.lineTo(fingerTrail[i + 1].x, fingerTrail[i + 1].y);
+  }
+  ctx.stroke();
+}
+
+function detectHits() {
+  fruits.forEach((fruit, index) => {
+    for (let i = 0; i < fingerTrail.length; i++) {
+      const dx = fruit.x - fingerTrail[i].x;
+      const dy = fruit.y - fingerTrail[i].y;
+      if (Math.sqrt(dx * dx + dy * dy) < 30) {
+        fruits.splice(index, 1); // slice it!
+        break;
+      }
+    }
+  });
+}
+
+async function runGame() {
+  model = await handPoseDetection.createDetector(handPoseDetection.SupportedModels.MediaPipeHands, {
+    runtime: 'mediapipe',
+    modelType: 'lite',
+    maxHands: 1
+  });
+
+  setInterval(spawnFruit, 1000);
+  setInterval(async () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hands = await model.estimateHands(video, { flipHorizontal: true });
+    drawFruits();
+
+    if (hands.length > 0) {
+      const indexTip = hands[0].keypoints.find(kp => kp.name === 'index_finger_tip');
+      if (indexTip) {
+        fingerTrail.push({ x: indexTip.x, y: indexTip.y });
+        if (fingerTrail.length > 20) fingerTrail.shift();
+        drawTrail();
+        detectHits();
+      }
+    }
+  }, 60);
+}
+
+await initWebcam();
+runGame();
