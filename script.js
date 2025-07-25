@@ -21,6 +21,14 @@ h1 {
   background-size: cover;
   border: 3px solid #fff;
 }
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(function(stream) {
+    const video = document.getElementById('webcam');
+    video.srcObject = stream;
+  })
+  .catch(function(err) {
+    console.error("Camera error:", err);
+  });
 
 #webcam {
   display: none;
